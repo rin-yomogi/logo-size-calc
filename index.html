@@ -11,7 +11,7 @@
     --accent:#0e9bb5; --accent-weak:#d6eef3;
     --warn-bg:#fdf6e3; --warn-ink:#8a6d1a;
     --hot:#e0596a; --hot-bg:#f9d9dd;
-    --radius:12px;
+    --rail:#e5e7eb;
   }
   *{box-sizing:border-box;}
   body{
@@ -20,26 +20,33 @@
     line-height:1.6;
   }
   .wrap{max-width:520px; margin:0 auto; padding:24px 20px 48px;}
+  .screen{display:none;}
+  .screen.active{display:block;}
+
   h1{font-size:20px; display:flex; align-items:center; gap:8px; justify-content:center; margin:8px 0 28px;}
-  h1 .logo-icon{
-    width:26px; height:26px; display:inline-block; color:var(--ink);
-    /* 仮のメジャー（巻尺）アイコン。後で本番アイコンに差し替え可 */
-  }
-  h1 .logo-icon svg{width:100%; height:100%; display:block;}
+  .icon{width:1em; height:1em; display:inline-block; vertical-align:-0.125em; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;}
+  h1 .logo-icon{ width:26px; height:26px; color:var(--ink); }
+
+  .scr-head{display:flex; align-items:center; gap:10px; margin:8px 0 6px;}
+  .scr-head h2{font-size:18px; margin:0; display:flex; align-items:center; gap:8px;}
+  .scr-head .icon{width:20px; height:20px;}
+  .scr-sub{color:var(--sub); font-size:13px; margin:0 0 24px;}
+
   .label{font-weight:700; font-size:14px; margin:24px 0 10px; line-height:1.6;}
-  h2.label{ } /* 見出しだが見た目はlabelクラスに統一 */
   .row{display:flex; align-items:center; gap:12px; margin:10px 0; flex-wrap:nowrap;}
   .row .cap{color:var(--ink); font-size:14px; flex:0 0 auto; white-space:nowrap;}
+
   input[type="number"], select{
     font-size:16px; padding:10px 12px; border:1px solid var(--line);
     border-radius:10px; background:#fff; color:var(--ink); width:120px;
   }
-  input[type="number"]:focus, select:focus{outline:2px solid var(--accent-weak); border-color:var(--accent);}
+  input:focus, select:focus{outline:2px solid var(--accent-weak); border-color:var(--accent);}
   select{
     width:auto; min-width:150px; padding:6px 14px; border-radius:999px;
     background:var(--accent-weak); border:1.5px solid var(--accent); color:#0a6f82;
     font-weight:400; font-size:15px;
   }
+
   .result-field{
     min-width:120px; padding:0 12px; min-height:46px; border-radius:10px;
     background:var(--field); color:var(--ink); font-size:16px;
@@ -50,22 +57,98 @@
     background:var(--field); color:var(--ink);
     display:inline-flex; align-items:center;
   }
-  .aspect-tag.lv-ok{   background:#d6eef3; color:#0a6f82; }  /* 青：OK */
-  .aspect-tag.lv-warn{ background:#fbeecb; color:#8a6d1a; }  /* 黄：注意 */
-  .aspect-tag.lv-hot{  background:var(--hot-bg); color:var(--hot); }  /* 赤：やばい */
-  .note{
-    margin-top:28px; padding:14px 16px; background:var(--warn-bg);
-    color:var(--warn-ink); font-size:13px; border-radius:10px;
-  }
+  .aspect-tag.lv-ok{   background:#d6eef3; color:#0a6f82; }
+  .aspect-tag.lv-warn{ background:#fbeecb; color:#8a6d1a; }
+  .aspect-tag.lv-hot{  background:var(--hot-bg); color:var(--hot); }
+
+  .note{margin-top:28px; padding:14px 16px; background:var(--warn-bg); color:var(--warn-ink); font-size:13px; border-radius:10px;}
   hr{border:none; border-top:1px solid var(--line); margin:28px 0;}
   .muted{color:var(--sub); font-size:12px;}
+
+  .btn-icon{
+    background:none; border:none; cursor:pointer; padding:6px;
+    color:var(--sub); border-radius:8px; font-size:14px;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn-icon:hover{background:var(--field); color:var(--ink);}
+  .btn-icon .icon{width:18px; height:18px;}
+  .link-row{display:flex; align-items:center; gap:8px; margin:6px 0 0;}
+
+  /* ランク設定 */
+  .rank-item{padding:14px 0; border-bottom:1px solid var(--line);}
+  .rank-line1{display:flex; align-items:center; gap:10px;}
+  .rank-color{width:18px; height:18px; border-radius:50%; flex:0 0 auto;}
+  .rank-name{
+    flex:1; min-width:0; font-size:15px; padding:6px 10px; border:1px solid var(--line);
+    border-radius:8px; background:#fff; color:var(--ink);
+  }
+  .rank-name.invalid{border-color:var(--hot); background:#fff6f7;}
+  .rank-line2{display:flex; align-items:center; gap:8px; margin-top:8px;}
+  input.rank-pct{
+    width:42px; flex:0 0 auto; text-align:center; font-size:13px;
+    padding:4px 2px; border:1px solid var(--line); border-radius:6px;
+    -moz-appearance:textfield; appearance:textfield;
+  }
+  input.rank-pct::-webkit-outer-spin-button,
+  input.rank-pct::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .rank-del{
+    background:none; border:none; cursor:pointer; color:var(--sub);
+    padding:0; border-radius:6px; flex:0 0 auto;
+    display:inline-flex; align-items:center; justify-content:center;
+    width:32px; height:32px;
+  }
+  .rank-del:hover{background:var(--hot-bg); color:var(--hot);}
+  .rank-del .icon{width:20px; height:20px;}
+
+  /* スライダー：左=ランク色／右=グレーのグラデで進捗を塗る（--rc=色, --fill=%） */
+  .rank-slider{
+    flex:1; min-width:0; -webkit-appearance:none; appearance:none;
+    height:6px; border-radius:999px; outline:none;
+    background:linear-gradient(to right,
+      var(--rc,var(--accent)) 0%,
+      var(--rc,var(--accent)) var(--fill,50%),
+      var(--rail) var(--fill,50%),
+      var(--rail) 100%);
+  }
+  .rank-slider::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%;
+    background:#fff; cursor:pointer; border:3px solid var(--rc, var(--accent));
+    box-shadow:0 1px 2px rgba(0,0,0,.15);
+  }
+  .rank-slider::-moz-range-thumb{
+    width:18px; height:18px; border-radius:50%;
+    background:#fff; cursor:pointer; border:3px solid var(--rc, var(--accent));
+    box-shadow:0 1px 2px rgba(0,0,0,.15);
+  }
+  .rank-slider:focus{ outline:none; }
+  .rank-slider::-moz-range-track{ background:transparent; }
+
+  .add-btn{
+    width:100%; margin-top:18px; padding:12px; border:1px dashed var(--line);
+    background:#fff; border-radius:10px; cursor:pointer; color:var(--sub); font-size:18px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .add-btn:hover{background:var(--field); color:var(--ink);}
+  .max-msg{ text-align:center; color:var(--sub); font-size:13px; margin-top:18px; }
+  .err-msg{color:var(--hot); font-size:12px; margin:6px 0 0; min-height:1em;}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1><span class="logo-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><path d="M6 7v3M10 7v4M14 7v3M18 7v4"/></svg></span> ロゴサイズ計算機</h1>
 
-  <!-- 入力 -->
+<!-- SVGアイコン定義（仮。後でCanvaのアイコンに差し替え可） -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="i-trash"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6"/></g>
+    <g id="i-wrench"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.8-.7-.7-2.8 2.5-2.5z"/></g>
+    <g id="i-back"><path d="M15 19l-7-7 7-7"/></g>
+    <g id="i-plus"><path d="M12 5v14M5 12h14"/></g>
+  </defs>
+</svg>
+
+<!-- ===================== 計算画面 ===================== -->
+<div class="wrap screen active" id="screen-calc">
+  <h1><span class="logo-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M3 7h18a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><path d="M6 7v3M10 7v4M14 7v3M18 7v4"/></svg></span> ロゴサイズ計算機</h1>
+
   <h2 class="label">サイズ (px / mm) or 比率</h2>
   <div class="row">
     <label class="cap" for="inH">たて</label>
@@ -76,11 +159,11 @@
   <div class="row">
     <label class="cap" for="rank">ランク</label>
     <select id="rank"></select>
+    <button class="btn-icon" id="goRank" type="button"><svg class="icon" viewBox="0 0 24 24"><use href="#i-wrench"/></svg> ランク設定</button>
   </div>
 
   <hr>
 
-  <!-- 結果 -->
   <h2 class="label">結果 (px / mm)</h2>
   <div aria-live="polite">
     <div class="row">
@@ -104,111 +187,232 @@
   <p class="muted">半BBOX方式（4段階）／ 基準寸法 100% = <span id="baseMM"></span>mm</p>
 </div>
 
+<!-- ===================== ランク設定画面 ===================== -->
+<div class="wrap screen" id="screen-rank">
+  <div class="scr-head">
+    <button class="btn-icon" id="backFromRank" type="button" aria-label="戻る"><svg class="icon" viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+    <h2><svg class="icon" viewBox="0 0 24 24"><use href="#i-wrench"/></svg> ランク設定</h2>
+  </div>
+  <p class="scr-sub">ランクのサイズ比率(%)を設定できます</p>
+
+  <div id="rankList"></div>
+  <p class="err-msg" id="rankErr"></p>
+  <button class="add-btn" id="addRank" type="button"><svg class="icon" viewBox="0 0 24 24" style="width:20px;height:20px"><use href="#i-plus"/></svg></button>
+  <p class="max-msg" id="maxMsg" style="display:none">ランクは最大 5 つまでです</p>
+</div>
+
 <script>
-/* ===== 設定（フェーズ1：コードに初期値で保持。将来は設定画面から） ===== */
-const BASE_MM = 75;            // 基準寸法（100%のときの縦mm）
-const RANKS = [                // 各ランクは「比率(%)」だけ持つ
-  {name:"プラチナ", ratio:110},
-  {name:"ゴールド", ratio:90},
-  {name:"シルバー", ratio:80},
-  {name:"ブロンズ", ratio:75},
-  {name:"In-kind",  ratio:70},
+const BASE_MM = 75;
+const MAX_RANKS = 5;
+const RANKS = [
+  {name:"プラチナ", ratio:100, color:"#d4a017"},
+  {name:"ゴールド", ratio:90,  color:"#e0a800"},
+  {name:"シルバー", ratio:80,  color:"#0e9bb5"},
+  {name:"ブロンズ", ratio:75,  color:"#b5651d"},
+  {name:"In-kind",  ratio:70,  color:"#e0596a"},
 ];
+const PALETTE = ["#0e9bb5","#5aa02c","#d4a017","#7d4fc4","#0a3d91","#e0596a","#444","#bbb"];
 
-/* 半BBOX 4段階のパラメータ（将来は詳細設定から可変） */
-const P = {
-  tate1: 1.0,    // 段階①：縦の基準
-  yoko1: 1.6,    // 段階②：横の抑え（黄金比箱）
-  tate2: 0.4,    // 段階③：縦の抑え
-  yoko2: 2.0,    // 段階④：横の抑え
-  tateMin: 0.25, // 「ここまで縦が潰れたら手動推奨」の縦の許容下限（段階④の横2.0時）
-};
-
-/* 境界はすべてパラメータから自動導出（勘の数字はここに集約・ハードコードしない） */
+const P = { tate1:1.0, yoko1:1.6, tate2:0.4, yoko2:2.0, tateMin:0.25 };
 function bounds(){
-  return {
-    b1: P.yoko1 / P.tate1,    // ①→②     = 1.6
-    b2: P.yoko1 / P.tate2,    // ②→③     = 4
-    b3: P.yoko2 / P.tate2,    // ③→④     = 5
-    b4: P.yoko2 / P.tateMin,  // ④→手動推奨 = 8（縦が tateMin を切るL）
-  };
+  return { b1:P.yoko1/P.tate1, b2:P.yoko1/P.tate2, b3:P.yoko2/P.tate2, b4:P.yoko2/P.tateMin };
 }
 
-/* ランクのプルダウンを作る */
-const sel = document.getElementById("rank");
-RANKS.forEach((r,i)=>{
-  const o = document.createElement("option");
-  o.value = i; o.textContent = r.name;
-  sel.appendChild(o);
+/* 画面切り替え */
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0,0);
+}
+document.getElementById("goRank").addEventListener("click", ()=>showScreen("screen-rank"));
+document.getElementById("backFromRank").addEventListener("click", ()=>{
+  if(!validateRanks()) return;
+  showScreen("screen-calc");
 });
-sel.value = 2; // 初期：シルバー
 
-/* 半BBOX 計算本体。基準縦 base に対して、L で段階を選び 縦横(相対倍率)を返す */
+/* ランクのプルダウン。選択は「ランクオブジェクトの参照」で保持し、
+   並びが変わっても同じランクを選び続ける（削除で黙ってズレない） */
+const sel = document.getElementById("rank");
+function rebuildRankSelect(keepRank){
+  // keepRank: 維持したいランクオブジェクト（省略時は現在の選択を維持）
+  const current = keepRank || RANKS[parseInt(sel.value,10)] || null;
+  sel.innerHTML = "";
+  RANKS.forEach((r,i)=>{
+    const o = document.createElement("option");
+    o.value = i; o.textContent = r.name || "(無名)";
+    sel.appendChild(o);
+  });
+  const idx = current ? RANKS.indexOf(current) : -1;
+  sel.value = (idx >= 0) ? idx : 0;   // 見つからなければ先頭
+}
+
 function halfBBOX(L, base){
   const {b1,b2,b3} = bounds();
-  let h, w; // 縦, 横（実寸mm）
-  if (L <= b1){            // ① 縦長〜正方形：縦1で接する
-    h = base * P.tate1;  w = h * L;
-  } else if (L <= b2){     // ② やや横長：横1.6で抑える
-    w = base * P.yoko1;  h = w / L;
-  } else if (L <= b3){     // ③ そこそこ横長：縦0.4で抑える
-    h = base * P.tate2;  w = h * L;
-  } else {                 // ④ かなり横長：横2.0で抑える
-    w = base * P.yoko2;  h = w / L;
-  }
+  let h, w;
+  if (L <= b1){ h = base*P.tate1; w = h*L; }
+  else if (L <= b2){ w = base*P.yoko1; h = w/L; }
+  else if (L <= b3){ h = base*P.tate2; w = h*L; }
+  else { w = base*P.yoko2; h = w/L; }
   return {h, w};
 }
-
-/* 区分ラベル＋信号色（青=OK / 黄=注意 / 赤=やばい） */
 function tagOf(L){
   const {b1,b2,b3,b4} = bounds();
   if (L <= b1) return {t:"縦長〜正方形", lv:"ok"};
   if (L <= b2) return {t:"やや横長",     lv:"ok"};
   if (L <= b3) return {t:"そこそこ横長", lv:"warn"};
   if (L < b4)  return {t:"かなり横長",   lv:"hot"};
-  return {t:"要手動調整", lv:"hot"};   // ※数値は出すが手動調整を促す（仕様A）
+  return {t:"要手動調整", lv:"hot"};
 }
-
 function calc(){
   const inH = parseFloat(document.getElementById("inH").value);
   const inW = parseFloat(document.getElementById("inW").value);
-  const r   = RANKS[parseInt(document.getElementById("rank").value, 10)];
-
-  if (!(inH > 0) || !(inW > 0)){
+  const r   = RANKS[parseInt(sel.value, 10)];
+  if (!(inH > 0) || !(inW > 0) || !r){
     ["outH","outW","outL"].forEach(id=>document.getElementById(id).textContent="–");
-    const t = document.getElementById("outTag");
-    t.textContent="–"; t.className="aspect-tag";
+    const t = document.getElementById("outTag"); t.textContent="–"; t.className="aspect-tag";
     return;
   }
-
-  const L = inW / inH;                 // アスペクト比
-  const base = BASE_MM * (r.ratio/100); // このランクの基準縦
+  const L = inW / inH;
+  const base = BASE_MM * (r.ratio/100);
   const {h, w} = halfBBOX(L, base);
   const tag = tagOf(L);
-
   document.getElementById("outH").textContent = h.toFixed(1);
   document.getElementById("outW").textContent = w.toFixed(1);
   document.getElementById("outL").textContent = L.toFixed(1);
   const tagEl = document.getElementById("outTag");
-  tagEl.textContent = tag.t;
-  tagEl.className = "aspect-tag lv-" + tag.lv;
+  tagEl.textContent = tag.t; tagEl.className = "aspect-tag lv-" + tag.lv;
 }
 
-/* 起動時：基準寸法の表示を JS に一本化、イベント登録、初期計算 */
+/* ランク設定：描画 */
+const rankList = document.getElementById("rankList");
+function renderRanks(){
+  rankList.innerHTML = "";
+  RANKS.forEach((r,i)=>{
+    const item = document.createElement("div");
+    item.className = "rank-item";
+
+    // 1行目：色丸・名前
+    const line1 = document.createElement("div");
+    line1.className = "rank-line1";
+    const dot = document.createElement("span");
+    dot.className = "rank-color"; dot.style.background = r.color || "#bbb";
+    const name = document.createElement("input");
+    name.type = "text"; name.className = "rank-name";
+    name.value = r.name; name.placeholder = "名前（必須）";
+    name.addEventListener("input", e=>{
+      RANKS[i].name = e.target.value;
+      name.classList.toggle("invalid", e.target.value.trim()==="");
+      rebuildRankSelect(); calc();
+    });
+    line1.append(dot, name);
+    // 下段のゴミ箱ぶんの幅を空けて、名前欄の右端を下段全体の右端に揃える
+    const spacer = document.createElement("span");
+    spacer.style.cssText = "width:32px; flex:0 0 auto;";
+    line1.append(spacer);
+
+    // 2行目：スライダー・%入力・ゴミ箱
+    const line2 = document.createElement("div");
+    line2.className = "rank-line2";
+
+    const slider = document.createElement("input");
+    slider.type = "range"; slider.className = "rank-slider";
+    slider.min = 1; slider.max = 100; slider.step = 1; slider.value = r.ratio;
+    slider.style.setProperty("--rc", r.color || "var(--accent)");
+    slider.setAttribute("aria-label", (r.name || "無名") + "の比率(%)");
+    const setFill = ()=> slider.style.setProperty("--fill", slider.value + "%");
+    setFill();
+
+    const pct = document.createElement("input");
+    pct.type = "number"; pct.className = "rank-pct";
+    pct.min = 1; pct.max = 100; pct.value = r.ratio;
+
+    const unit = document.createElement("span");
+    unit.textContent = "%"; unit.style.color="var(--sub)"; unit.style.fontSize="14px"; unit.style.flex="0 0 auto";
+
+    const del = document.createElement("button");
+    del.className = "rank-del"; del.type="button"; del.title="削除"; del.setAttribute("aria-label","削除");
+    del.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><use href="#i-trash"/></svg>';
+    del.addEventListener("click", ()=>{
+      if (RANKS.length <= 1){ flashErr("ランクは最低1つ必要です"); return; }
+      // 計算画面で選択中のランクを覚えておく
+      let keep = RANKS[parseInt(sel.value,10)] || null;
+      const removing = RANKS[i];
+      RANKS.splice(i,1);
+      // 選択中のランク自体を消したら、近い位置のランクにフォールバック
+      if (keep === removing) keep = RANKS[Math.min(i, RANKS.length-1)] || null;
+      renderRanks(); rebuildRankSelect(keep); calc();
+    });
+
+    slider.addEventListener("input", ()=>{
+      RANKS[i].ratio = parseInt(slider.value,10);
+      pct.value = slider.value; setFill(); calc();
+    });
+    pct.addEventListener("input", ()=>{
+      let v = parseInt(pct.value,10);
+      if (isNaN(v)) return;   // 入力途中（空など）は確定時に整える
+      v = Math.max(1, Math.min(100, v));
+      RANKS[i].ratio = v; slider.value = v; setFill(); calc();
+    });
+    pct.addEventListener("blur", ()=>{
+      let v = parseInt(pct.value,10);
+      if (isNaN(v) || v < 1) v = 1;      // 空・不正・1未満は最低値1に
+      if (v > 100) v = 100;
+      RANKS[i].ratio = v; pct.value = v; slider.value = v; setFill(); calc();
+    });
+
+    line2.append(slider, pct, unit, del);
+    item.append(line1, line2);
+    rankList.appendChild(item);
+  });
+  updateAddState();
+}
+
+/* 追加ボタン／上限メッセージの出し分け */
+function updateAddState(){
+  const atMax = RANKS.length >= MAX_RANKS;
+  document.getElementById("addRank").style.display = atMax ? "none" : "flex";
+  document.getElementById("maxMsg").style.display  = atMax ? "block" : "none";
+}
+
+let errTimer=null;
+function flashErr(msg){
+  const el = document.getElementById("rankErr");
+  el.textContent = msg;
+  clearTimeout(errTimer);
+  errTimer = setTimeout(()=>{ el.textContent=""; }, 2500);
+}
+function validateRanks(){
+  let ok = true;
+  document.querySelectorAll(".rank-name").forEach(el=>{
+    const empty = el.value.trim()==="";
+    el.classList.toggle("invalid", empty);
+    if (empty) ok = false;
+  });
+  if (!ok) flashErr("名前が空のランクがあります");
+  return ok;
+}
+
+document.getElementById("addRank").addEventListener("click", ()=>{
+  if (RANKS.length >= MAX_RANKS) return;
+  const color = PALETTE[RANKS.length % PALETTE.length];
+  RANKS.push({name:"", ratio:50, color});
+  renderRanks(); rebuildRankSelect(); calc();
+});
+
+/* 起動 */
 document.getElementById("baseMM").textContent = BASE_MM;
-
-/* 入力欄を小数第一位表示に整える（フォーカスを外したとき） */
-function fmtField(el){
-  const v = parseFloat(el.value);
-  if (v > 0) el.value = v.toFixed(1);   // 15 → 15.0
-}
+function fmtField(el){ const v=parseFloat(el.value); if(v>0) el.value=v.toFixed(1); }
 ["inH","inW"].forEach(id=>{
   const el = document.getElementById(id);
   el.addEventListener("input", calc);
   el.addEventListener("blur", ()=>fmtField(el));
-  fmtField(el);   // 初期表示も .0 付きに
+  fmtField(el);
 });
-document.getElementById("rank").addEventListener("change", calc);
+sel.addEventListener("change", calc);
+
+rebuildRankSelect();
+sel.value = 2;
+renderRanks();
 calc();
 </script>
 </body>

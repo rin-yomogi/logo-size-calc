@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ロゴサイズ計算機</title>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#1a1a1a; --sub:#6b7280;
+    --line:#e5e7eb; --field:#f3f4f6;
+    --accent:#0e9bb5; --accent-weak:#d6eef3;
+    --warn-bg:#fdf6e3; --warn-ink:#8a6d1a;
+    --hot:#e0596a; --hot-bg:#f9d9dd;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    line-height:1.6;
+  }
+  .wrap{max-width:520px; margin:0 auto; padding:24px 20px 48px;}
+  h1{font-size:20px; display:flex; align-items:center; gap:8px; justify-content:center; margin:8px 0 28px;}
+  h1 .logo-icon{
+    width:26px; height:26px; display:inline-block; color:var(--ink);
+    /* 仮のメジャー（巻尺）アイコン。後で本番アイコンに差し替え可 */
+  }
+  h1 .logo-icon svg{width:100%; height:100%; display:block;}
+  .label{font-weight:700; font-size:14px; margin:24px 0 10px;}
+  .row{display:flex; align-items:center; gap:12px; margin:10px 0; flex-wrap:nowrap;}
+  .row .cap{color:var(--ink); font-size:14px; flex:0 0 auto; white-space:nowrap;}
+  input[type="number"], select{
+    font-size:16px; padding:10px 12px; border:1px solid var(--line);
+    border-radius:10px; background:#fff; color:var(--ink); width:120px;
+  }
+  input[type="number"]:focus, select:focus{outline:2px solid var(--accent-weak); border-color:var(--accent);}
+  select{width:160px; background:var(--accent-weak); border-color:var(--accent); font-weight:400; color:#0a6f82;}
+  .result-field{
+    width:120px; padding:10px 12px; border-radius:10px;
+    background:var(--field); color:var(--ink); font-size:16px; text-align:center;
+  }
+  .aspect-tag{
+    padding:10px 16px; border-radius:8px; font-weight:400; font-size:14px;
+    background:var(--field); color:var(--ink);
+    display:inline-flex; align-items:center;
+    line-height:25.6px; /* result-field(16px×1.6)と行高を一致させ高さを揃える */
+  }
+  .aspect-tag.hot{background:var(--hot-bg); color:var(--hot);}
+  .note{
+    margin-top:28px; padding:14px 16px; background:var(--warn-bg);
+    color:var(--warn-ink); font-size:13px; border-radius:10px;
+  }
+  hr{border:none; border-top:1px solid var(--line); margin:28px 0;}
+  .muted{color:var(--sub); font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><span class="logo-icon" aria-label="メジャー（仮アイコン）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><path d="M6 7v3M10 7v4M14 7v3M18 7v4"/></svg></span> ロゴサイズ計算機</h1>
+
+  <!-- 入力 -->
+  <div class="label">サイズ (px / mm) or 比率</div>
+  <div class="row">
+    <span class="cap">たて</span>
+    <input type="number" id="inH" value="15" step="0.1" oninput="calc()">
+    <span class="cap">よこ</span>
+    <input type="number" id="inW" value="98" step="0.1" oninput="calc()">
+  </div>
+  <div class="row">
+    <span class="cap">ランク</span>
+    <select id="rank" onchange="calc()"></select>
+  </div>
+
+  <hr>
+
+  <!-- 結果 -->
+  <div class="label">結果 (px / mm)</div>
+  <div class="row">
+    <span class="cap">たて</span>
+    <div class="result-field" id="outH">–</div>
+    <span class="cap">よこ</span>
+    <div class="result-field" id="outW">–</div>
+  </div>
+  <div class="row">
+    <span class="cap" style="width:auto;">アスペクト比</span>
+    <div class="result-field" id="outL">–</div>
+    <div class="aspect-tag" id="outTag">–</div>
+  </div>
+
+  <div class="note">
+    ※ 機械計算のため誤差があります<br>
+    アスペクト比が大きくなるほど、目視での調整が必要になります
+  </div>
+
+  <p class="muted">半BBOX方式（4段階）／ 基準寸法 100% = <span id="baseMM">75</span>mm</p>
+</div>
+
+<script>
+/* ===== 設定（フェーズ1：コードに初期値で保持。将来は設定画面から） ===== */
+const BASE_MM = 75;            // 基準寸法（100%のときの縦mm）
+const RANKS = [                // 各ランクは「比率(%)」だけ持つ
+  {name:"プラチナ", ratio:110},
+  {name:"ゴールド", ratio:90},
+  {name:"シルバー", ratio:80},
+  {name:"ブロンズ", ratio:75},
+  {name:"In-kind",  ratio:70},
+];
+
+/* 半BBOX 4段階のパラメータ（将来は詳細設定から可変） */
+const P = {
+  tate1: 1.0,   // 段階①：縦の基準
+  yoko1: 1.6,   // 段階②：横の抑え（黄金比箱）
+  tate2: 0.4,   // 段階③：縦の抑え
+  yoko2: 2.0,   // 段階④：横の抑え
+};
+
+/* 境界はパラメータから自動導出（勘の数字ゼロ） */
+function bounds(){
+  return {
+    b1: P.yoko1 / P.tate1,          // ①→②  = 1.6
+    b2: P.yoko1 / P.tate2,          // ②→③  = 4
+    b3: P.yoko2 / P.tate2,          // ③→④  = 5
+  };
+}
+
+/* ランクのプルダウンを作る */
+const sel = document.getElementById("rank");
+RANKS.forEach((r,i)=>{
+  const o = document.createElement("option");
+  o.value = i; o.textContent = r.name;
+  sel.appendChild(o);
+});
+sel.value = 2; // 初期：シルバー
+
+/* 半BBOX 計算本体。基準縦 base に対して、L で段階を選び 縦横(相対倍率)を返す */
+function halfBBOX(L, base){
+  const {b1,b2,b3} = bounds();
+  let h, w; // 縦, 横（実寸mm）
+  if (L <= b1){            // ① 縦長〜正方形：縦1で接する
+    h = base * P.tate1;  w = h * L;
+  } else if (L <= b2){     // ② やや横長：横1.6で抑える
+    w = base * P.yoko1;  h = w / L;
+  } else if (L <= b3){     // ③ そこそこ横長：縦0.4で抑える
+    h = base * P.tate2;  w = h * L;
+  } else {                 // ④ かなり横長：横2.0で抑える
+    w = base * P.yoko2;  h = w / L;
+  }
+  return {h, w};
+}
+
+/* 区分ラベル */
+function tagOf(L){
+  const {b1,b2,b3} = bounds();
+  if (L <= b1) return {t:"縦長〜正方形", hot:false};
+  if (L <= b2) return {t:"やや横長",     hot:false};
+  if (L <= b3) return {t:"そこそこ横長", hot:false};
+  if (L < 8)   return {t:"かなり横長",   hot:true};
+  return {t:"要手動調整", hot:true};
+}
+
+function calc(){
+  const inH = parseFloat(document.getElementById("inH").value);
+  const inW = parseFloat(document.getElementById("inW").value);
+  const r   = RANKS[document.getElementById("rank").value];
+
+  if (!(inH > 0) || !(inW > 0)){
+    ["outH","outW","outL"].forEach(id=>document.getElementById(id).textContent="–");
+    document.getElementById("outTag").textContent="–";
+    return;
+  }
+
+  const L = inW / inH;                 // アスペクト比
+  const base = BASE_MM * (r.ratio/100); // このランクの基準縦
+  const {h, w} = halfBBOX(L, base);
+  const tag = tagOf(L);
+
+  document.getElementById("outH").textContent = h.toFixed(1);
+  document.getElementById("outW").textContent = w.toFixed(1);
+  document.getElementById("outL").textContent = L.toFixed(1);
+  const tagEl = document.getElementById("outTag");
+  tagEl.textContent = tag.t;
+  tagEl.className = "aspect-tag" + (tag.hot ? " hot" : "");
+  document.getElementById("baseMM").textContent = BASE_MM;
+}
+
+calc(); // 初期表示
+</script>
+</body>
+</html>

@@ -230,17 +230,20 @@ document.getElementById("backFromRank").addEventListener("click", ()=>{
   showScreen("screen-calc");
 });
 
-/* ランクのプルダウン */
+/* ランクのプルダウン。選択は「ランクオブジェクトの参照」で保持し、
+   並びが変わっても同じランクを選び続ける（削除で黙ってズレない） */
 const sel = document.getElementById("rank");
-function rebuildRankSelect(){
-  const prev = parseInt(sel.value,10);
+function rebuildRankSelect(keepRank){
+  // keepRank: 維持したいランクオブジェクト（省略時は現在の選択を維持）
+  const current = keepRank || RANKS[parseInt(sel.value,10)] || null;
   sel.innerHTML = "";
   RANKS.forEach((r,i)=>{
     const o = document.createElement("option");
     o.value = i; o.textContent = r.name || "(無名)";
     sel.appendChild(o);
   });
-  sel.value = (prev>=0 && prev<RANKS.length) ? prev : 0;
+  const idx = current ? RANKS.indexOf(current) : -1;
+  sel.value = (idx >= 0) ? idx : 0;   // 見つからなければ先頭
 }
 
 function halfBBOX(L, base){
@@ -315,6 +318,7 @@ function renderRanks(){
     slider.type = "range"; slider.className = "rank-slider";
     slider.min = 1; slider.max = 100; slider.step = 1; slider.value = r.ratio;
     slider.style.setProperty("--rc", r.color || "var(--accent)");
+    slider.setAttribute("aria-label", (r.name || "無名") + "の比率(%)");
     const setFill = ()=> slider.style.setProperty("--fill", slider.value + "%");
     setFill();
 
@@ -330,7 +334,13 @@ function renderRanks(){
     del.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><use href="#i-trash"/></svg>';
     del.addEventListener("click", ()=>{
       if (RANKS.length <= 1){ flashErr("ランクは最低1つ必要です"); return; }
-      RANKS.splice(i,1); renderRanks(); rebuildRankSelect(); calc();
+      // 計算画面で選択中のランクを覚えておく
+      let keep = RANKS[parseInt(sel.value,10)] || null;
+      const removing = RANKS[i];
+      RANKS.splice(i,1);
+      // 選択中のランク自体を消したら、近い位置のランクにフォールバック
+      if (keep === removing) keep = RANKS[Math.min(i, RANKS.length-1)] || null;
+      renderRanks(); rebuildRankSelect(keep); calc();
     });
 
     slider.addEventListener("input", ()=>{
@@ -339,9 +349,15 @@ function renderRanks(){
     });
     pct.addEventListener("input", ()=>{
       let v = parseInt(pct.value,10);
-      if (isNaN(v)) return;
+      if (isNaN(v)) return;   // 入力途中（空など）は確定時に整える
       v = Math.max(1, Math.min(100, v));
       RANKS[i].ratio = v; slider.value = v; setFill(); calc();
+    });
+    pct.addEventListener("blur", ()=>{
+      let v = parseInt(pct.value,10);
+      if (isNaN(v) || v < 1) v = 1;      // 空・不正・1未満は最低値1に
+      if (v > 100) v = 100;
+      RANKS[i].ratio = v; pct.value = v; slider.value = v; setFill(); calc();
     });
 
     line2.append(slider, pct, unit, del);

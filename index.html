@@ -12,6 +12,8 @@
     --warn-bg:#fdf6e3; --warn-ink:#8a6d1a;
     --hot:#e0596a; --hot-bg:#f9d9dd;
     --rail:#e5e7eb;
+    /* グレー箱・要素の共通サイズ（ここを変えれば全画面まとめて変わる） */
+    --box-w:114px; --box-h:44px;
   }
   *{box-sizing:border-box;}
   body{
@@ -46,14 +48,28 @@
     background:var(--accent-weak); border:1.5px solid var(--accent); color:#0a6f82;
     font-weight:400; font-size:15px;
   }
+  select.plain-select{
+    min-width:0; width:100px; padding:6px 14px; border-radius:999px;
+    background:#fff; border:1.5px solid var(--line); color:var(--ink);
+    margin-right:4px;
+  }
+  /* 基準辺の行と結果の行を同じ4列グリッドで縦に揃える
+     列：[ラベル][要素(プルダウン/たて箱)][ラベル][要素(数値/よこ箱)] */
+  .edge-grid{
+    display:grid; grid-template-columns:auto var(--box-w) auto var(--box-w);
+    align-items:center; column-gap:12px; margin:10px 0; justify-content:start;
+  }
+  .edge-grid .base-len{ width:var(--box-w); min-width:0; }
+  .edge-grid .box-field{ width:var(--box-w); min-width:0; }
+  .edge-grid .plain-select{ width:var(--box-w); justify-self:start; }
 
   .result-field{
-    min-width:120px; padding:0 12px; min-height:46px; border-radius:10px;
+    min-width:var(--box-w); padding:0 12px; min-height:var(--box-h); border-radius:10px;
     background:var(--field); color:var(--ink); font-size:16px;
     display:inline-flex; align-items:center; justify-content:center;
   }
   .aspect-tag{
-    padding:0 16px; min-height:46px; border-radius:8px; font-weight:400; font-size:14px;
+    padding:0 16px; min-height:var(--box-h); border-radius:8px; font-weight:400; font-size:14px;
     background:var(--field); color:var(--ink);
     display:inline-flex; align-items:center;
   }
@@ -161,6 +177,11 @@
     <select id="rank"></select>
     <button class="btn-icon" id="goRank" type="button"><svg class="icon" viewBox="0 0 24 24"><use href="#i-wrench"/></svg> ランク設定</button>
   </div>
+  <div class="row">
+    <span class="cap">抑え方</span>
+    <span class="muted" style="font-size:14px;">半BBOX</span>
+    <button class="btn-icon" id="goResize" type="button"><svg class="icon" viewBox="0 0 24 24"><use href="#i-wrench"/></svg> 抑え方設定</button>
+  </div>
 
   <hr>
 
@@ -201,6 +222,36 @@
   <p class="max-msg" id="maxMsg" style="display:none">ランクは最大 5 つまでです</p>
 </div>
 
+<!-- ===================== 抑え方設定画面（半BBOXのみ） ===================== -->
+<div class="wrap screen" id="screen-resize">
+  <div class="scr-head">
+    <button class="btn-icon" id="backFromResize" type="button" aria-label="戻る"><svg class="icon" viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+    <h2><svg class="icon" viewBox="0 0 24 24"><use href="#i-wrench"/></svg> 抑え方設定</h2>
+  </div>
+  <p class="scr-sub">基準(100%)のサイズを設定できます</p>
+
+  <h2 class="label">半BBOX</h2>
+  <div class="edge-grid">
+    <label class="cap" for="baseEdge">基準の辺</label>
+    <select id="baseEdge" class="plain-select">
+      <option value="tate">たて</option>
+      <option value="yoko">よこ</option>
+    </select>
+    <span></span>
+    <input type="number" id="baseLen" class="base-len" step="0.1" min="0">
+  </div>
+
+  <h2 class="label">結果：BOX サイズ (px / mm)</h2>
+  <div aria-live="polite">
+    <div class="edge-grid">
+      <span class="cap">たて</span>
+      <div class="result-field box-field" id="boxH">–</div>
+      <span class="cap">よこ</span>
+      <div class="result-field box-field" id="boxW">–</div>
+    </div>
+  </div>
+</div>
+
 <script>
 const BASE_MM = 75;
 const MAX_RANKS = 5;
@@ -229,6 +280,28 @@ document.getElementById("backFromRank").addEventListener("click", ()=>{
   if(!validateRanks()) return;
   showScreen("screen-calc");
 });
+document.getElementById("goResize").addEventListener("click", ()=>showScreen("screen-resize"));
+document.getElementById("backFromResize").addEventListener("click", ()=>showScreen("screen-calc"));
+
+/* 抑え方設定（半BBOX）：基準の辺＋長さ → BOXサイズ（たて1:よこ1.6） */
+const baseEdge = document.getElementById("baseEdge");
+const baseLen  = document.getElementById("baseLen");
+function calcBox(){
+  const len = parseFloat(baseLen.value);
+  const boxH = document.getElementById("boxH");
+  const boxW = document.getElementById("boxW");
+  if (!(len > 0)){ boxH.textContent="–"; boxW.textContent="–"; return; }
+  let h, w;
+  if (baseEdge.value === "tate"){      // たてを基準に → よこ = たて×1.6
+    h = len; w = len * P.yoko1;
+  } else {                              // よこを基準に → たて = よこ÷1.6
+    w = len; h = len / P.yoko1;
+  }
+  boxH.textContent = h.toFixed(1);
+  boxW.textContent = w.toFixed(1);
+}
+baseEdge.addEventListener("change", calcBox);
+baseLen.addEventListener("input", calcBox);
 
 /* ランクのプルダウン。選択は「ランクオブジェクトの参照」で保持し、
    並びが変わっても同じランクを選び続ける（削除で黙ってズレない） */
@@ -414,6 +487,10 @@ rebuildRankSelect();
 sel.value = 2;
 renderRanks();
 calc();
+
+/* 抑え方設定の初期値（基準たて = 基準寸法 75mm） */
+baseLen.value = BASE_MM;
+calcBox();
 </script>
 </body>
 </html>

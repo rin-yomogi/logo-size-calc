@@ -1,2 +1,3 @@
-# logo-size-calc
-ロゴサイズの計算機
+# logo-size-calcについて
+
+この

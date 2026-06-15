@@ -159,6 +159,12 @@
   .level-cell{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
   .level-name{ font-size:12px; color:var(--sub); }
   .level-cell .aspect-tag{ width:100%; justify-content:center; font-size:13px; }
+
+  /* ランクプレビュー：各ランクのBBOXを比率で相似に、縦積み・左端揃え */
+  .rank-preview{ display:flex; flex-direction:column; gap:8px; align-items:flex-start; padding:8px 0; }
+  .rank-bar{ display:flex; align-items:center; gap:8px; }
+  .rank-bar .swatch{ border-radius:4px; flex:0 0 auto; }
+  .rank-bar .rb-label{ font-size:12px; color:var(--sub); white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -233,6 +239,9 @@
   <p class="err-msg" id="rankErr"></p>
   <button class="add-btn" id="addRank" type="button"><svg class="icon" viewBox="0 0 24 24" style="width:20px;height:20px"><use href="#i-plus"/></svg></button>
   <p class="max-msg" id="maxMsg" style="display:none">ランクは最大 5 つまでです</p>
+
+  <h2 class="label">preview（横幅の比較）</h2>
+  <div class="rank-preview" id="rankPreview" aria-hidden="true"></div>
 </div>
 
 <!-- ===================== 抑え方設定画面（半BBOXのみ） ===================== -->
@@ -558,19 +567,19 @@ function renderRanks(){
 
     slider.addEventListener("input", ()=>{
       RANKS[i].ratio = parseInt(slider.value,10);
-      pct.value = slider.value; setFill(); calc();
+      pct.value = slider.value; setFill(); calc(); renderRankPreview();
     });
     pct.addEventListener("input", ()=>{
       let v = parseInt(pct.value,10);
       if (isNaN(v)) return;   // 入力途中（空など）は確定時に整える
       v = Math.max(1, Math.min(100, v));
-      RANKS[i].ratio = v; slider.value = v; setFill(); calc();
+      RANKS[i].ratio = v; slider.value = v; setFill(); calc(); renderRankPreview();
     });
     pct.addEventListener("blur", ()=>{
       let v = parseInt(pct.value,10);
       if (isNaN(v) || v < 1) v = 1;      // 空・不正・1未満は最低値1に
       if (v > 100) v = 100;
-      RANKS[i].ratio = v; pct.value = v; slider.value = v; setFill(); calc();
+      RANKS[i].ratio = v; pct.value = v; slider.value = v; setFill(); calc(); renderRankPreview();
     });
 
     line2.append(slider, pct, unit, del);
@@ -578,6 +587,7 @@ function renderRanks(){
     rankList.appendChild(item);
   });
   updateAddState();
+  renderRankPreview();
 }
 
 /* 追加ボタン／上限メッセージの出し分け */
@@ -611,6 +621,29 @@ document.getElementById("addRank").addEventListener("click", ()=>{
   RANKS.push({name:"", ratio:50, color});
   renderRanks(); rebuildRankSelect(); calc();
 });
+
+/* ランクプレビュー：各ランクのBBOXを比率で相似に（縦積み・左端揃え・横幅で比較） */
+function renderRankPreview(){
+  const pv = document.getElementById("rankPreview");
+  if (!pv) return;
+  pv.innerHTML = "";
+  if (RANKS.length === 0) return;
+  const maxRatio = Math.max(...RANKS.map(r=>r.ratio)) || 1;
+  const MAXW = 260;                  // 最大比率ランクの横幅(px)
+  const aspect = P.yoko1 / P.tate1;  // BBOXの 横/縦（=1.6）
+  RANKS.forEach(r=>{
+    const w = MAXW * (r.ratio / maxRatio);
+    const h = w / aspect;
+    const bar = document.createElement("div"); bar.className = "rank-bar";
+    const sw = document.createElement("div"); sw.className = "swatch";
+    sw.style.width = w.toFixed(0)+"px"; sw.style.height = Math.max(h,4).toFixed(0)+"px";
+    sw.style.background = r.color || "#bbb";
+    const lb = document.createElement("span"); lb.className = "rb-label";
+    lb.textContent = (r.name || "(無名)") + " " + r.ratio + "%";
+    bar.append(sw, lb);
+    pv.appendChild(bar);
+  });
+}
 
 /* 起動 */
 document.getElementById("baseMM").textContent = BASE_MM;

@@ -390,6 +390,12 @@
 
   <h2 class="label" style="margin-top:20px;">プレビュー</h2>
   <div class="detail-preview" id="detailPreview" aria-hidden="true">
+    <!-- 抑え方の切替プルダウン（空き枠：今は半BBOXのみ・disabled）。実装本体は #31／#23（フェーズ2）-->
+    <div style="display:flex; justify-content:flex-end; margin-bottom:4px;">
+      <select class="plain-select" id="detailPreviewKind" style="width:auto; align-self:flex-start; height:auto;" disabled title="現在は半BBOXのみ">
+        <option>半BBOX</option>
+      </select>
+    </div>
     <svg id="dpSvg" viewBox="0 0 320 460" width="100%" style="max-width:340px; display:block; margin:0 auto;">
       <!-- JSで3段（上=はこ1・はこ2の重なり／中=はこ1／下=はこ2）を描画 -->
     </svg>

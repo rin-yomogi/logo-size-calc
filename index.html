@@ -166,6 +166,13 @@
   .rank-bar{ display:flex; align-items:center; gap:8px; }
   .rank-bar .swatch{ border-radius:4px; flex:0 0 auto; }
   .rank-bar .rb-label{ font-size:12px; color:var(--sub); white-space:nowrap; }
+
+  /* 計算画面プレビュー：上段=ロゴ単体／下段=BBOXにどう収まるか */
+  .calc-preview{ display:flex; flex-direction:column; gap:24px; padding:16px 0; overflow:hidden; }
+  .cp-stage{ position:relative; height:110px; display:flex; align-items:center; justify-content:center; }
+  .cp-logo{ background:var(--cp-color, var(--accent)); border-radius:3px; }
+  .cp-stage .cp-logo{ position:absolute; }            /* 中央基準で重ねる */
+  .cp-bbox{ position:absolute; border:1.5px dashed #b8bcc4; border-radius:4px; background:transparent; }
 </style>
 </head>
 <body>
@@ -218,6 +225,20 @@
       <span class="cap" style="width:auto;">アスペクト比</span>
       <div class="result-field" id="outL">–</div>
       <div class="aspect-tag" id="outTag">–</div>
+    </div>
+  </div>
+
+  <h2 class="label">プレビュー</h2>
+  <div class="calc-preview" id="calcPreview" aria-hidden="true">
+    <!-- 上段：ロゴ単体 -->
+    <div class="cp-stage" id="cpStageTop">
+      <div class="cp-logo" id="cpLogoTop"></div>
+    </div>
+    <!-- 下段：BBOXにどう収まるか -->
+    <div class="cp-stage" id="cpStageBox">
+      <div class="cp-bbox" id="cpBox1"></div>
+      <div class="cp-bbox" id="cpBox2"></div>
+      <div class="cp-logo" id="cpLogoBox"></div>
     </div>
   </div>
 
@@ -523,6 +544,7 @@ function calc(){
   if (!(inH > 0) || !(inW > 0) || !r){
     ["outH","outW","outL"].forEach(id=>document.getElementById(id).textContent="–");
     const t = document.getElementById("outTag"); t.textContent="–"; t.className="aspect-tag";
+    clearCalcPreview();
     return;
   }
   const L = inW / inH;
@@ -534,6 +556,41 @@ function calc(){
   document.getElementById("outL").textContent = L.toFixed(1);
   const tagEl = document.getElementById("outTag");
   tagEl.textContent = tag.t; tagEl.className = "aspect-tag lv-" + tag.lv;
+  // プレビューは「形・収まり」を見せるので、ランク比率を抜いた100%基準(base=BASE_MM)で描く
+  const box100 = halfBBOX(L, BASE_MM);
+  renderCalcPreview(L, box100.h, box100.w, r.color || "var(--accent)");
+}
+
+/* 計算画面プレビュー描画：上段=ロゴ単体／下段=BBOXにどう収まるか */
+function clearCalcPreview(){
+  ["cpLogoTop","cpLogoBox","cpBox1","cpBox2"].forEach(id=>{
+    const el=document.getElementById(id); if(el){ el.style.width="0"; el.style.height="0"; }
+  });
+}
+function renderCalcPreview(L, h, w, color){
+  // ステージの使える領域（この中に必ず収める）
+  const STAGE_W = 320, STAGE_H = 96;
+  // 最大になるのは BOX1・BOX2 の設定値（ロゴは必ず箱の中に収まるので、箱だけ見れば足りる）
+  const needWr = Math.max(P.yoko1, P.yoko2);   // 横の最大（比率）
+  const needHr = Math.max(P.tate1, P.tate2);   // 縦の最大（比率）
+  // 枠に収まる最大の unit（横・縦どちらの制約も満たす）。余白マージン0.9
+  const unit = Math.min(STAGE_W / needWr, STAGE_H / needHr) * 0.9;
+  const mm2px = unit / BASE_MM;
+  const lw = w * mm2px, lh = h * mm2px;                  // ロゴ実寸(px)
+
+  // --- 上段：ロゴ単体（下段と同寸）---
+  const top = document.getElementById("cpLogoTop");
+  top.style.width = lw.toFixed(0)+"px"; top.style.height = lh.toFixed(0)+"px";
+  top.style.background = color;
+
+  // --- 下段：BBOX（BOX1・BOX2破線）に、同じロゴが収まる ---
+  const box1 = document.getElementById("cpBox1");
+  const box2 = document.getElementById("cpBox2");
+  box1.style.width = (P.yoko1*unit).toFixed(0)+"px"; box1.style.height = (P.tate1*unit).toFixed(0)+"px";
+  box2.style.width = (P.yoko2*unit).toFixed(0)+"px"; box2.style.height = (P.tate2*unit).toFixed(0)+"px";
+  const logo = document.getElementById("cpLogoBox");
+  logo.style.width = lw.toFixed(0)+"px"; logo.style.height = lh.toFixed(0)+"px";
+  logo.style.background = color;
 }
 
 /* ランク設定：描画 */

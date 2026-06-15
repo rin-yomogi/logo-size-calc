@@ -231,6 +231,13 @@
 
   <h2 class="label">プレビュー</h2>
   <div class="calc-preview" id="calcPreview" aria-hidden="true">
+    <!-- 抑え方の切替プルダウン（空き枠：今は半BBOXのみ・disabled）。
+         抑え方が増えたら option を足し、renderCalcPreview を抑え方で分岐させる。実装本体は #31／#23（フェーズ2）-->
+    <div style="display:flex; justify-content:flex-end; margin:-4px 0 -8px;">
+      <select class="plain-select" id="calcPreviewKind" style="width:auto; align-self:flex-start; height:auto;" disabled title="現在は半BBOXのみ">
+        <option>半BBOX</option>
+      </select>
+    </div>
     <!-- 上段：ロゴ単体 -->
     <div class="cp-stage" id="cpStageTop">
       <div class="cp-logo" id="cpLogoTop"></div>

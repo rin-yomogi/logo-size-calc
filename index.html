@@ -568,11 +568,15 @@ function clearCalcPreview(){
   });
 }
 function renderCalcPreview(L, h, w, color){
-  const STAGE = 88;             // ステージ内の基準スケール(px)。比率1.0 = STAGE px
-  const unit = STAGE;
-  const mm2px = unit / BASE_MM; // 基準75mm を STAGE px に
-  // ロゴの実寸（px）。上段・下段で同じサイズを使う（同じロゴだから）
-  const lw = w * mm2px, lh = h * mm2px;
+  // ステージの使える領域（この中に必ず収める）
+  const STAGE_W = 320, STAGE_H = 96;
+  // 最大になるのは BOX1・BOX2 の設定値（ロゴは必ず箱の中に収まるので、箱だけ見れば足りる）
+  const needWr = Math.max(P.yoko1, P.yoko2);   // 横の最大（比率）
+  const needHr = Math.max(P.tate1, P.tate2);   // 縦の最大（比率）
+  // 枠に収まる最大の unit（横・縦どちらの制約も満たす）。余白マージン0.9
+  const unit = Math.min(STAGE_W / needWr, STAGE_H / needHr) * 0.9;
+  const mm2px = unit / BASE_MM;
+  const lw = w * mm2px, lh = h * mm2px;                  // ロゴ実寸(px)
 
   // --- 上段：ロゴ単体（下段と同寸）---
   const top = document.getElementById("cpLogoTop");

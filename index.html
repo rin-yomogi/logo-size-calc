@@ -155,10 +155,17 @@
   input.detail-num::-webkit-outer-spin-button,
   input.detail-num::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
   .detail-slider{ flex:1; min-width:0; accent-color:var(--accent); }
+  .unit-mark{ font-size:13px; color:var(--sub); flex:0 0 auto; min-width:1.2em; }
   .level-row{ display:flex; gap:10px; }
   .level-cell{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
   .level-name{ font-size:12px; color:var(--sub); }
   .level-cell .aspect-tag{ width:100%; justify-content:center; font-size:13px; }
+
+  /* ランクプレビュー：各ランクのBBOXを比率で相似に、縦積み・左端揃え */
+  .rank-preview{ display:flex; flex-direction:column; gap:8px; align-items:flex-start; padding:8px 0; }
+  .rank-bar{ display:flex; align-items:center; gap:8px; }
+  .rank-bar .swatch{ border-radius:4px; flex:0 0 auto; }
+  .rank-bar .rb-label{ font-size:12px; color:var(--sub); white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -171,6 +178,7 @@
     <g id="i-back"><path d="M15 19l-7-7 7-7"/></g>
     <g id="i-plus"><path d="M12 5v14M5 12h14"/></g>
     <g id="i-gear"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></g>
+    <g id="i-reset"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 4v4h4"/></g>
   </defs>
 </svg>
 
@@ -233,6 +241,9 @@
   <p class="err-msg" id="rankErr"></p>
   <button class="add-btn" id="addRank" type="button"><svg class="icon" viewBox="0 0 24 24" style="width:20px;height:20px"><use href="#i-plus"/></svg></button>
   <p class="max-msg" id="maxMsg" style="display:none">ランクは最大 5 つまでです</p>
+
+  <h2 class="label">プレビュー（横幅の比較）</h2>
+  <div class="rank-preview" id="rankPreview" aria-hidden="true"></div>
 </div>
 
 <!-- ===================== 抑え方設定画面（半BBOXのみ） ===================== -->
@@ -241,7 +252,7 @@
     <button class="btn-icon" id="backFromResize" type="button" aria-label="戻る"><svg class="icon" viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
     <h2><svg class="icon" viewBox="0 0 24 24"><use href="#i-wrench"/></svg> 抑え方設定</h2>
   </div>
-  <p class="scr-sub">基準(100%)のサイズを設定できます</p>
+  <p class="scr-sub">基準の辺と長さから BOX サイズを確認できます</p>
 
   <h2 class="label">半BBOX</h2>
   <div class="link-row" style="margin:0 0 10px;">
@@ -288,11 +299,12 @@
   <!-- BOX1 -->
   <h2 class="label" style="margin-top:14px;">BOX 1</h2>
   <div class="row">
-    <label class="cap" for="d_tate1">たて</label>
+    <span class="cap">たて</span>
     <div class="result-field" id="d_tate1">–</div>
     <label class="cap" for="d_yoko1">よこ</label>
     <input type="number" id="d_yoko1" class="detail-num" step="0.1" min="0">
-    <button class="btn-icon" id="reset1" type="button" aria-label="リセット" title="初期値に戻す">↺</button>
+    <span class="unit-mark" id="unit_yoko1"></span>
+    <button class="btn-icon" id="reset1" type="button" aria-label="よこを初期値に戻す" title="初期値に戻す"><svg class="icon" viewBox="0 0 24 24"><use href="#i-reset"/></svg></button>
   </div>
   <p class="muted" id="box1note">※ BOX1のたてを基準 (1 / 100%) とします</p>
 
@@ -300,15 +312,20 @@
   <h2 class="label" style="margin-top:14px;">BOX 2</h2>
   <div class="row">
     <label class="cap" for="d_tate2_s">たて</label>
-    <input type="range" id="d_tate2_s" class="detail-slider" min="1" max="100" step="1">
+    <input type="range" id="d_tate2_s" class="detail-slider" min="25" max="100" step="1">
     <input type="number" id="d_tate2" class="detail-num" step="0.01" min="0">
-    <button class="btn-icon" id="reset2t" type="button" aria-label="リセット" title="初期値に戻す">↺</button>
+    <span class="unit-mark" id="unit_tate2"></span>
+    <button class="btn-icon" id="reset2t" type="button" aria-label="たてを初期値に戻す" title="初期値に戻す"><svg class="icon" viewBox="0 0 24 24"><use href="#i-reset"/></svg></button>
   </div>
   <div class="row">
-    <label class="cap" for="d_yoko2">よこ</label>
+    <label class="cap" for="d_yoko2_s">よこ</label>
+    <input type="range" id="d_yoko2_s" class="detail-slider" min="160" max="260" step="1">
     <input type="number" id="d_yoko2" class="detail-num" step="0.1" min="0">
-    <button class="btn-icon" id="reset2y" type="button" aria-label="リセット" title="初期値に戻す">↺</button>
-    <span class="cap" style="margin-left:8px;">アスペクト比</span>
+    <span class="unit-mark" id="unit_yoko2"></span>
+    <button class="btn-icon" id="reset2y" type="button" aria-label="よこを初期値に戻す" title="初期値に戻す"><svg class="icon" viewBox="0 0 24 24"><use href="#i-reset"/></svg></button>
+  </div>
+  <div class="row">
+    <span class="cap" style="width:auto;">アスペクト比</span>
     <div class="result-field" id="d_aspect">–</div>
   </div>
 
@@ -371,10 +388,21 @@ const dEls = {
   yoko1: document.getElementById("d_yoko1"),
   tate2s:document.getElementById("d_tate2_s"),
   tate2: document.getElementById("d_tate2"),
+  yoko2s:document.getElementById("d_yoko2_s"),
   yoko2: document.getElementById("d_yoko2"),
   aspect:document.getElementById("d_aspect"),
   mode:  document.getElementById("ratioMode"),
 };
+/* 各パラメータの常識的な範囲（内部=比率）。極端値を収める */
+const P_RANGE = {
+  yoko1: [1.0, 2.0],    // BOX1のよこ
+  tate2: [0.25, 1.0],   // BOX2のたて（下限0.25＝tateMinと一致）
+  yoko2: [1.6, 2.6],    // BOX2のよこ（下限=よこ1基準1.6 / 上限≒φ²）
+};
+function clampP(key, v){
+  const r = P_RANGE[key]; if(!r) return v;
+  return Math.min(r[1], Math.max(r[0], v));
+}
 /* 表示用フォーマット：比率(0.40) か ％(40) */
 function fmtRatio(v){
   return dEls.mode.value === "percent" ? Math.round(v*100) : v;
@@ -387,12 +415,23 @@ function parseRatio(str){
 
 /* 詳細設定の表示を P から更新 */
 function renderDetail(){
+  const isPct = dEls.mode.value === "percent";
   dEls.tate1.textContent = fmtRatio(P.tate1);                 // たて1（固定表示）
   dEls.yoko1.value  = fmtRatio(P.yoko1);
   dEls.tate2.value  = fmtRatio(P.tate2);
-  dEls.tate2s.value = Math.round(P.tate2*100);                // スライダーは％基準(1〜100)
+  dEls.tate2s.value = Math.round(P.tate2*100);                // スライダーは％基準
   dEls.yoko2.value  = fmtRatio(P.yoko2);
+  dEls.yoko2s.value = Math.round(P.yoko2*100);                // よこ2スライダーも％基準(160〜260)
   dEls.aspect.textContent = (P.yoko2 / P.tate2).toFixed(1);   // アスペクト比＝よこ2/たて2
+  // 単位表示（％モードのとき「％」、比率モードは無印）＝事故防止
+  const mark = isPct ? "％" : "";
+  ["unit_yoko1","unit_tate2","unit_yoko2"].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.textContent = mark;
+  });
+  // 入力欄のstepもモードで切替（％なら整数、比率なら小数）
+  dEls.yoko1.step = isPct ? "1" : "0.1";
+  dEls.tate2.step = isPct ? "1" : "0.01";
+  dEls.yoko2.step = isPct ? "1" : "0.1";
   renderLevels();
 }
 
@@ -410,12 +449,13 @@ function applyDetail(){
   calc();   // 計算画面の結果もリアタイ更新
 }
 dEls.yoko1.addEventListener("input", ()=>{ const v=parseRatio(dEls.yoko1.value); if(v>0){P.yoko1=v; renderLevels(); calc();} });
-dEls.yoko1.addEventListener("blur",  ()=>renderDetail());
+dEls.yoko1.addEventListener("blur",  ()=>{ P.yoko1=clampP("yoko1",P.yoko1); renderDetail(); calc(); });
 dEls.tate2.addEventListener("input", ()=>{ const v=parseRatio(dEls.tate2.value); if(v>0){P.tate2=v; dEls.tate2s.value=Math.round(v*100); dEls.aspect.textContent=(P.yoko2/P.tate2).toFixed(1); renderLevels(); calc();} });
-dEls.tate2.addEventListener("blur",  ()=>renderDetail());
+dEls.tate2.addEventListener("blur",  ()=>{ P.tate2=clampP("tate2",P.tate2); renderDetail(); calc(); });
 dEls.tate2s.addEventListener("input",()=>{ P.tate2 = parseInt(dEls.tate2s.value,10)/100; renderDetail(); calc(); });
-dEls.yoko2.addEventListener("input", ()=>{ const v=parseRatio(dEls.yoko2.value); if(v>0){P.yoko2=v; dEls.aspect.textContent=(P.yoko2/P.tate2).toFixed(1); renderLevels(); calc();} });
-dEls.yoko2.addEventListener("blur",  ()=>renderDetail());
+dEls.yoko2.addEventListener("input", ()=>{ const v=parseRatio(dEls.yoko2.value); if(v>0){P.yoko2=v; dEls.yoko2s.value=Math.round(v*100); dEls.aspect.textContent=(P.yoko2/P.tate2).toFixed(1); renderLevels(); calc();} });
+dEls.yoko2.addEventListener("blur",  ()=>{ P.yoko2=clampP("yoko2",P.yoko2); renderDetail(); calc(); });
+dEls.yoko2s.addEventListener("input",()=>{ P.yoko2 = parseInt(dEls.yoko2s.value,10)/100; renderDetail(); calc(); });
 dEls.mode.addEventListener("change", ()=>renderDetail());   // 比率↔％切替は表示だけ作り直す
 
 /* リセット（各初期値へ） */
@@ -558,19 +598,19 @@ function renderRanks(){
 
     slider.addEventListener("input", ()=>{
       RANKS[i].ratio = parseInt(slider.value,10);
-      pct.value = slider.value; setFill(); calc();
+      pct.value = slider.value; setFill(); calc(); renderRankPreview();
     });
     pct.addEventListener("input", ()=>{
       let v = parseInt(pct.value,10);
       if (isNaN(v)) return;   // 入力途中（空など）は確定時に整える
       v = Math.max(1, Math.min(100, v));
-      RANKS[i].ratio = v; slider.value = v; setFill(); calc();
+      RANKS[i].ratio = v; slider.value = v; setFill(); calc(); renderRankPreview();
     });
     pct.addEventListener("blur", ()=>{
       let v = parseInt(pct.value,10);
       if (isNaN(v) || v < 1) v = 1;      // 空・不正・1未満は最低値1に
       if (v > 100) v = 100;
-      RANKS[i].ratio = v; pct.value = v; slider.value = v; setFill(); calc();
+      RANKS[i].ratio = v; pct.value = v; slider.value = v; setFill(); calc(); renderRankPreview();
     });
 
     line2.append(slider, pct, unit, del);
@@ -578,6 +618,7 @@ function renderRanks(){
     rankList.appendChild(item);
   });
   updateAddState();
+  renderRankPreview();
 }
 
 /* 追加ボタン／上限メッセージの出し分け */
@@ -611,6 +652,29 @@ document.getElementById("addRank").addEventListener("click", ()=>{
   RANKS.push({name:"", ratio:50, color});
   renderRanks(); rebuildRankSelect(); calc();
 });
+
+/* ランクプレビュー：各ランクのBBOXを比率で相似に（縦積み・左端揃え・横幅で比較） */
+function renderRankPreview(){
+  const pv = document.getElementById("rankPreview");
+  if (!pv) return;
+  pv.innerHTML = "";
+  if (RANKS.length === 0) return;
+  const maxRatio = Math.max(...RANKS.map(r=>r.ratio)) || 1;
+  const MAXW = 260;                  // 最大比率ランクの横幅(px)
+  const aspect = P.yoko1 / P.tate1;  // BBOXの 横/縦（=1.6）
+  RANKS.forEach(r=>{
+    const w = MAXW * (r.ratio / maxRatio);
+    const h = w / aspect;
+    const bar = document.createElement("div"); bar.className = "rank-bar";
+    const sw = document.createElement("div"); sw.className = "swatch";
+    sw.style.width = w.toFixed(0)+"px"; sw.style.height = Math.max(h,4).toFixed(0)+"px";
+    sw.style.background = r.color || "#bbb";
+    const lb = document.createElement("span"); lb.className = "rb-label";
+    lb.textContent = (r.name || "(無名)") + " " + r.ratio + "%";
+    bar.append(sw, lb);
+    pv.appendChild(bar);
+  });
+}
 
 /* 起動 */
 document.getElementById("baseMM").textContent = BASE_MM;

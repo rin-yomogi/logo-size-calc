@@ -173,6 +173,7 @@
   .cp-logo{ background:var(--cp-color, var(--accent)); border-radius:3px; }
   .cp-stage .cp-logo{ position:absolute; }            /* 中央基準で重ねる */
   .cp-bbox{ position:absolute; border:1.5px dashed #b8bcc4; border-radius:4px; background:transparent; }
+  .resize-preview{ display:flex; justify-content:center; padding:12px 0; }
 </style>
 </head>
 <body>
@@ -297,6 +298,18 @@
       <span class="cap">よこ</span>
       <div class="result-field box-field" id="boxW">–</div>
     </div>
+  </div>
+
+  <h2 class="label">プレビュー</h2>
+  <div class="resize-preview" id="resizePreview" aria-hidden="true">
+    <div style="display:flex; justify-content:flex-end; margin-bottom:4px;">
+      <select class="plain-select" id="resizeKind" style="width:auto; align-self:flex-start; height:auto;" disabled title="現在は半BBOXのみ">
+        <option>半BBOX</option>
+      </select>
+    </div>
+    <svg id="rpSvg" viewBox="0 0 300 200" width="100%" style="max-width:340px; display:block; margin:0 auto;">
+      <!-- JSで寸法線と箱を描画 -->
+    </svg>
   </div>
 </div>
 
@@ -491,7 +504,7 @@ function calcBox(){
   const len = parseFloat(baseLen.value);
   const boxH = document.getElementById("boxH");
   const boxW = document.getElementById("boxW");
-  if (!(len > 0)){ boxH.textContent="–"; boxW.textContent="–"; return; }
+  if (!(len > 0)){ boxH.textContent="–"; boxW.textContent="–"; renderResizePreview(0,0); return; }
   let h, w;
   if (baseEdge.value === "tate"){      // たてを基準に → よこ = たて×1.6
     h = len; w = len * P.yoko1;
@@ -500,6 +513,50 @@ function calcBox(){
   }
   boxH.textContent = h.toFixed(1);
   boxW.textContent = w.toFixed(1);
+  renderResizePreview(h, w);
+}
+
+/* 抑え方設定プレビュー：BOXを寸法線つきで描く。
+   基準に選んだ辺＝青＋矢印ヘッド／計算で出る辺＝グレー＋Tヘッド */
+function renderResizePreview(h, w){
+  const svg = document.getElementById("rpSvg");
+  if (!svg) return;
+  if (!(h>0) || !(w>0)){ svg.innerHTML=""; return; }
+
+  const edge = baseEdge.value;          // "tate" or "yoko"
+  const ACC = "#0e9bb5", GRAY = "#9aa0a8";
+  const tateColor = (edge==="tate") ? ACC : GRAY;
+  const yokoColor = (edge==="yoko") ? ACC : GRAY;
+  // 基準辺=矢印ヘッド(ar) / 計算で出る辺=Tヘッド(tee)。色も対応
+  const yokoMk = (edge==="yoko") ? "ar-acc" : "tee-gray";
+  const tateMk = (edge==="tate") ? "ar-acc" : "tee-gray";
+
+  // 箱を領域に収める（長辺基準でスケール）
+  const AREA_W = 190, AREA_H = 120;
+  const s = Math.min(AREA_W / w, AREA_H / h);
+  const bw = w * s, bh = h * s;
+  const ox = 95, oy = 55;               // 箱の左上（寸法線ぶんの余白）
+
+  let p = `<defs>
+    <marker id="ar-acc" markerWidth="10" markerHeight="10" refX="5" refY="4" orient="auto-start-reverse"><path d="M2,1 L7,4 L2,7" fill="none" stroke="${ACC}" stroke-width="1.4"/></marker>
+    <marker id="tee-gray" markerWidth="10" markerHeight="10" refX="5" refY="4" orient="auto"><path d="M5,1 L5,7" stroke="${GRAY}" stroke-width="1.4"/></marker>
+  </defs>`;
+
+  // 箱（ガワのみ）
+  p += `<rect x="${ox}" y="${oy}" width="${bw}" height="${bh}" fill="none" stroke="#333" stroke-width="1.5" rx="6"/>`;
+
+  // 横の寸法線（箱の上）
+  const yTop = oy - 24;
+  p += `<line x1="${ox}" y1="${yTop}" x2="${ox+bw}" y2="${yTop}" stroke="${yokoColor}" stroke-width="1.4" marker-start="url(#${yokoMk})" marker-end="url(#${yokoMk})"/>`;
+  p += `<text x="${ox+bw/2}" y="${yTop-7}" text-anchor="middle" font-size="13" fill="${yokoColor}">${w.toFixed(1)}</text>`;
+
+  // 縦の寸法線（箱の左）
+  const xLeft = ox - 24;
+  p += `<line x1="${xLeft}" y1="${oy}" x2="${xLeft}" y2="${oy+bh}" stroke="${tateColor}" stroke-width="1.4" marker-start="url(#${tateMk})" marker-end="url(#${tateMk})"/>`;
+  p += `<text x="${xLeft-7}" y="${oy+bh/2}" text-anchor="end" dominant-baseline="middle" font-size="13" fill="${tateColor}">${h.toFixed(1)}</text>`;
+
+  svg.setAttribute("viewBox", "0 0 300 200");
+  svg.innerHTML = p;
 }
 baseEdge.addEventListener("change", calcBox);
 baseLen.addEventListener("input", calcBox);

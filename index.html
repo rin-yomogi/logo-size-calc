@@ -380,6 +380,13 @@
     </div>
   </div>
   <p class="muted">※ 設定によって変動します</p>
+
+  <h2 class="label" style="margin-top:20px;">プレビュー</h2>
+  <div class="detail-preview" id="detailPreview" aria-hidden="true">
+    <svg id="dpSvg" viewBox="0 0 320 460" width="100%" style="max-width:340px; display:block; margin:0 auto;">
+      <!-- JSで3段（上=はこ1・はこ2の重なり／中=はこ1／下=はこ2）を描画 -->
+    </svg>
+  </div>
 </div>
 
 <script>
@@ -475,6 +482,68 @@ function renderLevels(){
   document.getElementById("lvOk").textContent   = "L ≦ " + b2.toFixed(1);
   document.getElementById("lvWarn").textContent = b2.toFixed(1) + " < L ≦ " + b3.toFixed(1);
   document.getElementById("lvHot").textContent  = b3.toFixed(1) + " < L";
+  renderDetailPreview();
+}
+
+/* 詳細設定プレビュー（3段）：上=はこ1・はこ2の重なり／中=はこ1単体／下=はこ2単体
+   はこ1＝白地・枠線（BOX1: たて1:よこ1.6）／はこ2＝グレー塗り（BOX2: たて2:よこ2） */
+function renderDetailPreview(){
+  const svg = document.getElementById("dpSvg");
+  if (!svg) return;
+  const ACC = "#0e9bb5", RED = "#e0596a", GRAY = "#9aa0a8";
+  const GRAY_D = "#6b7280", GRAY_L = "#c4c8ce";   // 濃いめ／薄め
+  const cx = 150;                 // 中心X
+  // スケール：一番横に広い要素（はこ2のよこ）が枠に収まるよう毎回算出（他プレビューと同じ思想）
+  // 中心揃え＋左右の寸法線/数値ぶんの余白を見て、利用可能な半幅を約120pxとする
+  const HALF = 120;
+  const maxWr = Math.max(P.yoko1, P.yoko2);        // 一番広い箱のよこ（比率）
+  const U = Math.min(95, (HALF*2) / maxWr);        // 収まる範囲で最大95px
+
+  // はこの寸法（px）
+  const b1w = P.yoko1*U, b1h = P.tate1*U;   // はこ1
+  const b2w = P.yoko2*U, b2h = P.tate2*U;   // はこ2
+
+  let p = `<defs>
+    <marker id="dp-acc" markerWidth="9" markerHeight="9" refX="4.5" refY="4" orient="auto-start-reverse"><path d="M2,1 L6.5,4 L2,7" fill="none" stroke="${ACC}" stroke-width="1.3"/></marker>
+    <marker id="dp-red" markerWidth="9" markerHeight="9" refX="4.5" refY="4" orient="auto-start-reverse"><path d="M2,1 L6.5,4 L2,7" fill="none" stroke="${RED}" stroke-width="1.3"/></marker>
+    <marker id="dp-grayD" markerWidth="9" markerHeight="9" refX="4.5" refY="4" orient="auto-start-reverse"><path d="M2,1 L6.5,4 L2,7" fill="none" stroke="${GRAY_D}" stroke-width="1.3"/></marker>
+    <marker id="dp-teeL" markerWidth="9" markerHeight="9" refX="4.5" refY="4" orient="auto"><path d="M4.5,1 L4.5,7" stroke="${GRAY_L}" stroke-width="1.3"/></marker>
+  </defs>`;
+
+  // ===== 上段：はこ1（白地・枠）と はこ2（グレー帯）の重なり =====
+  const oy1 = 20;
+  const cy1 = oy1 + b1h/2;
+  // はこ1（白地・枠）：先に描いて背面に
+  p += `<rect x="${cx-b1w/2}" y="${oy1}" width="${b1w}" height="${b1h}" fill="#fff" stroke="#333" stroke-width="1.5" rx="6"/>`;
+  // はこ2（グレー帯）：後に描いて前面に（横長で左右にはみ出す・半透明で下の箱が透ける）
+  p += `<rect x="${cx-b2w/2}" y="${cy1-b2h/2}" width="${b2w}" height="${b2h}" fill="#d9dadd" fill-opacity="0.7" stroke="#bbb" stroke-width="1"/>`;
+
+  // ===== 中段：はこ1 単体（よこ=矢印・濃いめ／たて=Tヘッド・薄く）=====
+  const oy2 = oy1 + b1h + 55;
+  const x1 = cx - b1w/2;
+  p += `<rect x="${x1}" y="${oy2}" width="${b1w}" height="${b1h}" fill="none" stroke="#333" stroke-width="1.5" rx="6"/>`;
+  // よこ1.6（上・濃いめグレー・矢印←→）
+  p += `<line x1="${x1}" y1="${oy2-16}" x2="${x1+b1w}" y2="${oy2-16}" stroke="${GRAY_D}" stroke-width="1.4" marker-start="url(#dp-grayD)" marker-end="url(#dp-grayD)"/>`;
+  p += `<text x="${cx}" y="${oy2-22}" text-anchor="middle" font-size="12" fill="${GRAY_D}">${P.yoko1.toFixed(1)}</text>`;
+  // たて1.0（左・薄いグレー・Tヘッド）
+  p += `<line x1="${x1-16}" y1="${oy2}" x2="${x1-16}" y2="${oy2+b1h}" stroke="${GRAY_L}" stroke-width="1.3" marker-start="url(#dp-teeL)" marker-end="url(#dp-teeL)"/>`;
+  p += `<text x="${x1-22}" y="${oy2+b1h/2}" text-anchor="end" dominant-baseline="middle" font-size="12" fill="${GRAY_L}">${P.tate1.toFixed(1)}</text>`;
+
+  // ===== 下段：はこ2 単体（よこ=青／たて=赤、両方←→）=====
+  const oy3 = oy2 + b1h + 60;
+  const x2 = cx - b2w/2;
+  p += `<rect x="${x2}" y="${oy3}" width="${b2w}" height="${b2h}" fill="#d9dadd" stroke="#bbb" stroke-width="1"/>`;
+  // よこ2.0（上・青）
+  p += `<line x1="${x2}" y1="${oy3-16}" x2="${x2+b2w}" y2="${oy3-16}" stroke="${ACC}" stroke-width="1.4" marker-start="url(#dp-acc)" marker-end="url(#dp-acc)"/>`;
+  p += `<text x="${cx}" y="${oy3-22}" text-anchor="middle" font-size="12" fill="${ACC}">${P.yoko2.toFixed(1)}</text>`;
+  // たて0.40（左・赤）
+  p += `<line x1="${x2-16}" y1="${oy3}" x2="${x2-16}" y2="${oy3+b2h}" stroke="${RED}" stroke-width="1.4" marker-start="url(#dp-red)" marker-end="url(#dp-red)"/>`;
+  p += `<text x="${x2-22}" y="${oy3+b2h/2}" text-anchor="end" dominant-baseline="middle" font-size="12" fill="${RED}">${P.tate2.toFixed(2)}</text>`;
+
+  // viewBox高さを内容に合わせる
+  const totalH = oy3 + b2h + 24;
+  svg.setAttribute("viewBox", `0 0 300 ${totalH.toFixed(0)}`);
+  svg.innerHTML = p;
 }
 
 /* 入力 → P 更新 → 全体反映（計算画面も連動） */

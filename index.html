@@ -533,7 +533,7 @@ function tagOf(L){
   const {b1,b2,b3,b4} = bounds();
   if (L <= b1) return {t:"縦長〜正方形", lv:"ok"};
   if (L <= b2) return {t:"やや横長",     lv:"ok"};
-  if (L <= b3) return {t:"そこそこ横長", lv:"warn"};
+  if (L <= b3) return {t:"横長", lv:"warn"};
   if (L < b4)  return {t:"かなり横長",   lv:"hot"};
   return {t:"要手動調整", lv:"hot"};
 }

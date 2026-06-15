@@ -147,6 +147,18 @@
   .add-btn:hover{background:var(--field); color:var(--ink);}
   .max-msg{ text-align:center; color:var(--sub); font-size:13px; margin-top:18px; }
   .err-msg{color:var(--hot); font-size:12px; margin:6px 0 0; min-height:1em;}
+
+  /* 詳細設定 */
+  input.detail-num{ width:64px; min-width:0; text-align:center; font-size:15px;
+    padding:8px 4px; border:1px solid var(--line); border-radius:8px;
+    -moz-appearance:textfield; appearance:textfield; }
+  input.detail-num::-webkit-outer-spin-button,
+  input.detail-num::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .detail-slider{ flex:1; min-width:0; accent-color:var(--accent); }
+  .level-row{ display:flex; gap:10px; }
+  .level-cell{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .level-name{ font-size:12px; color:var(--sub); }
+  .level-cell .aspect-tag{ width:100%; justify-content:center; font-size:13px; }
 </style>
 </head>
 <body>
@@ -158,6 +170,7 @@
     <g id="i-wrench"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.8-.7-.7-2.8 2.5-2.5z"/></g>
     <g id="i-back"><path d="M15 19l-7-7 7-7"/></g>
     <g id="i-plus"><path d="M12 5v14M5 12h14"/></g>
+    <g id="i-gear"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></g>
   </defs>
 </svg>
 
@@ -231,6 +244,9 @@
   <p class="scr-sub">基準(100%)のサイズを設定できます</p>
 
   <h2 class="label">半BBOX</h2>
+  <div class="link-row" style="margin:0 0 10px;">
+    <button class="btn-icon" id="goDetail" type="button"><svg class="icon" viewBox="0 0 24 24"><use href="#i-gear"/></svg> 詳細設定</button>
+  </div>
   <div class="edge-grid">
     <label class="cap" for="baseEdge">基準の辺</label>
     <select id="baseEdge" class="plain-select">
@@ -250,6 +266,69 @@
       <div class="result-field box-field" id="boxW">–</div>
     </div>
   </div>
+</div>
+
+<!-- ===================== 詳細設定画面（半BBOX・プレビュー以外） ===================== -->
+<div class="wrap screen" id="screen-detail">
+  <div class="scr-head">
+    <button class="btn-icon" id="backFromDetail" type="button" aria-label="戻る"><svg class="icon" viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+    <h2><svg class="icon" viewBox="0 0 24 24"><use href="#i-gear"/></svg> 詳細設定</h2>
+  </div>
+  <p class="scr-sub">半BBOXの詳細設定</p>
+
+  <!-- 比率/％ の表示切替 -->
+  <div class="row" style="justify-content:space-between;">
+    <h2 class="label" style="margin:8px 0;">BOXの比率設定</h2>
+    <select id="ratioMode" class="plain-select" style="width:auto;">
+      <option value="ratio">比率</option>
+      <option value="percent">％</option>
+    </select>
+  </div>
+
+  <!-- BOX1 -->
+  <h2 class="label" style="margin-top:14px;">BOX 1</h2>
+  <div class="row">
+    <label class="cap" for="d_tate1">たて</label>
+    <div class="result-field" id="d_tate1">–</div>
+    <label class="cap" for="d_yoko1">よこ</label>
+    <input type="number" id="d_yoko1" class="detail-num" step="0.1" min="0">
+    <button class="btn-icon" id="reset1" type="button" aria-label="リセット" title="初期値に戻す">↺</button>
+  </div>
+  <p class="muted" id="box1note">※ BOX1のたてを基準 (1 / 100%) とします</p>
+
+  <!-- BOX2 -->
+  <h2 class="label" style="margin-top:14px;">BOX 2</h2>
+  <div class="row">
+    <label class="cap" for="d_tate2_s">たて</label>
+    <input type="range" id="d_tate2_s" class="detail-slider" min="1" max="100" step="1">
+    <input type="number" id="d_tate2" class="detail-num" step="0.01" min="0">
+    <button class="btn-icon" id="reset2t" type="button" aria-label="リセット" title="初期値に戻す">↺</button>
+  </div>
+  <div class="row">
+    <label class="cap" for="d_yoko2">よこ</label>
+    <input type="number" id="d_yoko2" class="detail-num" step="0.1" min="0">
+    <button class="btn-icon" id="reset2y" type="button" aria-label="リセット" title="初期値に戻す">↺</button>
+    <span class="cap" style="margin-left:8px;">アスペクト比</span>
+    <div class="result-field" id="d_aspect">–</div>
+  </div>
+
+  <!-- 横長レベル表示（パラメータからリアタイ導出・固定色） -->
+  <h2 class="label" style="margin-top:20px;">アスペクト比(L)による横長レベル表示</h2>
+  <div class="level-row">
+    <div class="level-cell">
+      <span class="level-name">縦長〜やや横長</span>
+      <div class="aspect-tag lv-ok" id="lvOk">–</div>
+    </div>
+    <div class="level-cell">
+      <span class="level-name">横長</span>
+      <div class="aspect-tag lv-warn" id="lvWarn">–</div>
+    </div>
+    <div class="level-cell">
+      <span class="level-name">かなり横長</span>
+      <div class="aspect-tag lv-hot" id="lvHot">–</div>
+    </div>
+  </div>
+  <p class="muted">※ 設定によって変動します</p>
 </div>
 
 <script>
@@ -282,6 +361,67 @@ document.getElementById("backFromRank").addEventListener("click", ()=>{
 });
 document.getElementById("goResize").addEventListener("click", ()=>showScreen("screen-resize"));
 document.getElementById("backFromResize").addEventListener("click", ()=>showScreen("screen-calc"));
+document.getElementById("goDetail").addEventListener("click", ()=>showScreen("screen-detail"));
+document.getElementById("backFromDetail").addEventListener("click", ()=>showScreen("screen-resize"));
+
+/* ===== 詳細設定：P（半BBOXパラメータ）を編集。比率↔％は表示だけ変換、内部は常に比率 ===== */
+const P_DEFAULT = { tate1:1.0, yoko1:1.6, tate2:0.4, yoko2:2.0 };
+const dEls = {
+  tate1: document.getElementById("d_tate1"),
+  yoko1: document.getElementById("d_yoko1"),
+  tate2s:document.getElementById("d_tate2_s"),
+  tate2: document.getElementById("d_tate2"),
+  yoko2: document.getElementById("d_yoko2"),
+  aspect:document.getElementById("d_aspect"),
+  mode:  document.getElementById("ratioMode"),
+};
+/* 表示用フォーマット：比率(0.40) か ％(40) */
+function fmtRatio(v){
+  return dEls.mode.value === "percent" ? Math.round(v*100) : v;
+}
+function parseRatio(str){
+  const n = parseFloat(str);
+  if (isNaN(n)) return null;
+  return dEls.mode.value === "percent" ? n/100 : n;  // ％入力なら÷100で内部の比率へ
+}
+
+/* 詳細設定の表示を P から更新 */
+function renderDetail(){
+  dEls.tate1.textContent = fmtRatio(P.tate1);                 // たて1（固定表示）
+  dEls.yoko1.value  = fmtRatio(P.yoko1);
+  dEls.tate2.value  = fmtRatio(P.tate2);
+  dEls.tate2s.value = Math.round(P.tate2*100);                // スライダーは％基準(1〜100)
+  dEls.yoko2.value  = fmtRatio(P.yoko2);
+  dEls.aspect.textContent = (P.yoko2 / P.tate2).toFixed(1);   // アスペクト比＝よこ2/たて2
+  renderLevels();
+}
+
+/* 横長レベル表示：境界はパラメータからリアタイ導出（固定色・変更不可） */
+function renderLevels(){
+  const {b2,b3} = bounds();   // b2=②→③(=yoko1/tate2), b3=③→④(=yoko2/tate2)
+  document.getElementById("lvOk").textContent   = "L ≦ " + b2.toFixed(1);
+  document.getElementById("lvWarn").textContent = b2.toFixed(1) + " < L ≦ " + b3.toFixed(1);
+  document.getElementById("lvHot").textContent  = b3.toFixed(1) + " < L";
+}
+
+/* 入力 → P 更新 → 全体反映（計算画面も連動） */
+function applyDetail(){
+  renderDetail();
+  calc();   // 計算画面の結果もリアタイ更新
+}
+dEls.yoko1.addEventListener("input", ()=>{ const v=parseRatio(dEls.yoko1.value); if(v>0){P.yoko1=v; renderLevels(); calc();} });
+dEls.yoko1.addEventListener("blur",  ()=>renderDetail());
+dEls.tate2.addEventListener("input", ()=>{ const v=parseRatio(dEls.tate2.value); if(v>0){P.tate2=v; dEls.tate2s.value=Math.round(v*100); dEls.aspect.textContent=(P.yoko2/P.tate2).toFixed(1); renderLevels(); calc();} });
+dEls.tate2.addEventListener("blur",  ()=>renderDetail());
+dEls.tate2s.addEventListener("input",()=>{ P.tate2 = parseInt(dEls.tate2s.value,10)/100; renderDetail(); calc(); });
+dEls.yoko2.addEventListener("input", ()=>{ const v=parseRatio(dEls.yoko2.value); if(v>0){P.yoko2=v; dEls.aspect.textContent=(P.yoko2/P.tate2).toFixed(1); renderLevels(); calc();} });
+dEls.yoko2.addEventListener("blur",  ()=>renderDetail());
+dEls.mode.addEventListener("change", ()=>renderDetail());   // 比率↔％切替は表示だけ作り直す
+
+/* リセット（各初期値へ） */
+document.getElementById("reset1").addEventListener("click", ()=>{ P.yoko1=P_DEFAULT.yoko1; applyDetail(); });
+document.getElementById("reset2t").addEventListener("click",()=>{ P.tate2=P_DEFAULT.tate2; applyDetail(); });
+document.getElementById("reset2y").addEventListener("click",()=>{ P.yoko2=P_DEFAULT.yoko2; applyDetail(); });
 
 /* 抑え方設定（半BBOX）：基準の辺＋長さ → BOXサイズ（たて1:よこ1.6） */
 const baseEdge = document.getElementById("baseEdge");
@@ -491,6 +631,9 @@ calc();
 /* 抑え方設定の初期値（基準たて = 基準寸法 75mm） */
 baseLen.value = BASE_MM;
 calcBox();
+
+/* 詳細設定の初期表示 */
+renderDetail();
 </script>
 </body>
 </html>
